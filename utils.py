@@ -1,15 +1,18 @@
 # utils.py
 from PIL import Image
-import numpy as np
 def gri_donusum(resim: Image.Image) -> Image.Image:
-    pikseller = resim.load()
     genislik, yukseklik = resim.size
+    yeni_resim = Image.new("RGB", (genislik, yukseklik))
+    orijinal = resim.load()
+    yeni = yeni_resim.load()
+
     for x in range(genislik):
         for y in range(yukseklik):
-            r, g, b = pikseller[x, y]
+            r, g, b = orijinal[x, y]
             gri = (r + g + b) // 3
-            pikseller[x, y] = (gri, gri, gri)
-    return resim
+            yeni[x, y] = (gri, gri, gri)
+
+    return yeni_resim
 
 def ikili_donusum(resim: Image.Image, esik: int = 128) -> Image.Image:
     gri = gri_donusum(resim)
@@ -91,33 +94,32 @@ def zoom(resim: Image.Image, oran: float) -> Image.Image:
             yeni[x, y] = orijinal[eski_x, eski_y]
 
     return yeni_resim
-def histogram_germe_ve_hesapla(resim: Image.Image):
-    gri_resim = gri_donusum(resim)
-    w, h = gri_resim.size
-    pikseller = gri_resim.load()
+def histogram_germe(resim: Image.Image) -> Image.Image:
+    gri = gri_donusum(resim)  # artık güvenle çalışır
+    pikseller = gri.load()
+    genislik, yukseklik = gri.size
 
-    # 1. Histogramı hesapla (gri ton frekansı)
-    histogram = [0] * 256
-    for x in range(w):
-        for y in range(h):
-            gri = pikseller[x, y][0]
-            histogram[gri] += 1
+    min_gri = 255
+    max_gri = 0
 
-    # 2. Minimum ve maksimum gri değeri bul
-    min_deger = next(i for i, v in enumerate(histogram) if v > 0)
-    max_deger = next(i for i in reversed(range(256)) if histogram[i] > 0)
+    # Min ve max değeri bul
+    for x in range(genislik):
+        for y in range(yukseklik):
+            deger = pikseller[x, y][0]
+            min_gri = min(min_gri, deger)
+            max_gri = max(max_gri, deger)
 
-    # 3. Histogram germe işlemini uygula
-    for x in range(w):
-        for y in range(h):
-            gri = pikseller[x, y][0]
-            if max_deger != min_deger:
-                yeni = int((gri - min_deger) * 255 / (max_deger - min_deger))
-            else:
-                yeni = gri
+    if max_gri == min_gri:
+        return gri
+
+    # Stretch işlemi
+    for x in range(genislik):
+        for y in range(yukseklik):
+            eski = pikseller[x, y][0]
+            yeni = int((eski - min_gri) * 255 / (max_gri - min_gri))
             pikseller[x, y] = (yeni, yeni, yeni)
 
-    return gri_resim, histogram
+    return gri
 
 def rgb_to_hsv(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
@@ -298,7 +300,6 @@ def genisleme(resim: Image.Image) -> Image.Image:
         for x in range(1, w-1):
             komsu = [matris[y+j][x+i] for j in [-1,0,1] for i in [-1,0,1]]
             sonuc[y][x] = 1 if any(komsu) else 0
-
     return to_image(sonuc)
 def acma(resim: Image.Image) -> Image.Image:
     return genisleme(erozyon(resim.copy()))
@@ -311,9 +312,7 @@ def motion_blur(resim: Image.Image, boyut: int = 9) -> Image.Image:
 
     yeni = Image.new("RGB", (genislik, yukseklik))
     yeni_pikseller = yeni.load()
-
     yarim = boyut // 2
-
     for x in range(yarim, genislik - yarim):
         for y in range(yukseklik):
             toplam = 0
