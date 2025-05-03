@@ -1,11 +1,9 @@
-# utils.py
 from PIL import Image
 def gri_donusum(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
     yeni_resim = Image.new("RGB", (genislik, yukseklik))
     orijinal = resim.load()
     yeni = yeni_resim.load()
-
     for x in range(genislik):
         for y in range(yukseklik):
             r, g, b = orijinal[x, y]
@@ -50,22 +48,18 @@ def dondur_degistir(resim: Image.Image, derece: int) -> Image.Image:
             for y in range(yukseklik):
                 yeni[yukseklik - 1 - y, x] = orijinal[x, y]
     else:
-        return resim  # 0 dereceyse veya geçersizse orijinali döndür
+        return resim  
 
     return yeni_resim
 
 def kirp(resim: Image.Image, x1: int, y1: int, x2: int, y2: int) -> Image.Image:
     genislik, yukseklik = resim.size
-    # Koordinat sınırlarını aşma kontrolü
     x1 = max(0, min(x1, genislik - 1))
     x2 = max(0, min(x2, genislik))
     y1 = max(0, min(y1, yukseklik - 1))
     y2 = max(0, min(y2, yukseklik))
-
     if x1 >= x2 or y1 >= y2:
-        return resim  # Geçersiz koordinatlarda orijinal resmi döndür
-
-    # Yeni görüntüyü oluştur
+        return resim  
     yeni_resim = Image.new("RGB", (x2 - x1, y2 - y1))
     orijinal = resim.load()
     yeni = yeni_resim.load()
@@ -78,13 +72,10 @@ def kirp(resim: Image.Image, x1: int, y1: int, x2: int, y2: int) -> Image.Image:
 def zoom(resim: Image.Image, oran: float) -> Image.Image:
     genislik, yukseklik = resim.size
     orijinal = resim.load()
-
     yeni_genislik = int(genislik * oran)
     yeni_yukseklik = int(yukseklik * oran)
-
     yeni_resim = Image.new("RGB", (yeni_genislik, yeni_yukseklik))
     yeni = yeni_resim.load()
-
     for x in range(yeni_genislik):
         for y in range(yeni_yukseklik):
             eski_x = int(x / oran)
@@ -94,32 +85,38 @@ def zoom(resim: Image.Image, oran: float) -> Image.Image:
             yeni[x, y] = orijinal[eski_x, eski_y]
 
     return yeni_resim
-def histogram_germe(resim: Image.Image) -> Image.Image:
-    gri = gri_donusum(resim)  # artık güvenle çalışır
+def histogram_esitleme(resim: Image.Image) -> Image.Image:
+    gri = resim.convert("L")  # Gri formata çevir
     pikseller = gri.load()
     genislik, yukseklik = gri.size
 
-    min_gri = 255
-    max_gri = 0
-
-    # Min ve max değeri bul
+    histogram = [0] * 256
     for x in range(genislik):
         for y in range(yukseklik):
-            deger = pikseller[x, y][0]
-            min_gri = min(min_gri, deger)
-            max_gri = max(max_gri, deger)
+            deger = pikseller[x, y]
+            histogram[deger] += 1
 
-    if max_gri == min_gri:
-        return gri
+    cdf = [0] * 256
+    cdf[0] = histogram[0]
+    for i in range(1, 256):
+        cdf[i] = cdf[i - 1] + histogram[i]
 
-    # Stretch işlemi
+    toplam_piksel = genislik * yukseklik
+    cdf_min = next((val for val in cdf if val > 0), 0)
+    esitleme_tablosu = [0] * 256
+    for i in range(256):
+        if toplam_piksel - cdf_min > 0:
+            esitleme_tablosu[i] = round((cdf[i] - cdf_min) * 255 / (toplam_piksel - cdf_min))
+        else:
+            esitleme_tablosu[i] = 0
+
+    yeni = Image.new("L", (genislik, yukseklik))
+    yeni_pikseller = yeni.load()
     for x in range(genislik):
         for y in range(yukseklik):
-            eski = pikseller[x, y][0]
-            yeni = int((eski - min_gri) * 255 / (max_gri - min_gri))
-            pikseller[x, y] = (yeni, yeni, yeni)
-
-    return gri
+            eski = pikseller[x, y]
+            yeni_pikseller[x, y] = esitleme_tablosu[eski]
+    return yeni.convert("RGB")
 
 def rgb_to_hsv(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
@@ -135,7 +132,6 @@ def rgb_to_hsv(resim: Image.Image) -> Image.Image:
             mn = min(r, g, b)
             df = mx - mn
 
-            # Hue
             if df == 0:
                 h = 0
             elif mx == r:
@@ -145,19 +141,13 @@ def rgb_to_hsv(resim: Image.Image) -> Image.Image:
             elif mx == b:
                 h = (60 * ((r - g) / df) + 240) % 360
 
-            # Saturation
             s = 0 if mx == 0 else (df / mx)
-
-            # Value
             v = mx
 
-            # HSV'yi tekrar RGB'ye dönüştürüp sadece H (renk tonu) bilgisini vurgula
             h_renk = int(h / 360 * 255)
             s_renk = int(s * 255)
             v_renk = int(v * 255)
-
             yeni[x, y] = (h_renk, s_renk, v_renk)
-
     return yeni_resim
 def cift_esikleme(resim: Image.Image, alt_esik: int, ust_esik: int) -> Image.Image:
     gri = gri_donusum(resim)
@@ -180,14 +170,10 @@ def kenar_bulma(resim: Image.Image) -> Image.Image:
     gri = gri_donusum(resim.copy())
     genislik, yukseklik = gri.size
     orijinal = gri.load()
-
     yeni_resim = Image.new("RGB", (genislik, yukseklik))
     yeni = yeni_resim.load()
-
-    # Sobel çekirdekleri
     gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
     gy = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
-
     for x in range(1, genislik - 1):
         for y in range(1, yukseklik - 1):
             toplam_gx = 0
@@ -199,7 +185,6 @@ def kenar_bulma(resim: Image.Image) -> Image.Image:
                     toplam_gx += piksel * gx[j + 1][i + 1]
                     toplam_gy += piksel * gy[j + 1][i + 1]
 
-            # Kenar büyüklüğü
             kenar = int((toplam_gx**2 + toplam_gy**2) ** 0.5)
             kenar = max(0, min(255, kenar))
             yeni[x, y] = (kenar, kenar, kenar)
@@ -218,8 +203,8 @@ def gurultu_ekle_sap(resim: Image.Image, oran: float) -> Image.Image:
         y = random.randint(0, yukseklik - 1)
         deger = 255 if random.random() < 0.5 else 0
         pikseller[x, y] = (deger, deger, deger)
-
     return resim
+
 def mean_filtre(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
     gri = gri_donusum(resim.copy())
@@ -242,7 +227,6 @@ def median_filtre(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
     gri = gri_donusum(resim.copy())
     orijinal = gri.load()
-
     yeni = Image.new("RGB", (genislik, yukseklik))
     yeni_pikseller = yeni.load()
 
@@ -255,10 +239,8 @@ def median_filtre(resim: Image.Image) -> Image.Image:
             komsular.sort()
             medyan = komsular[4]
             yeni_pikseller[x, y] = (medyan, medyan, medyan)
-
     return yeni
 def get_binary(resim: Image.Image) -> list:
-    """Sadece 0 ve 255 değerli ikili matris döndürür."""
     pikseller = resim.load()
     w, h = resim.size
     matris = []
@@ -280,6 +262,7 @@ def to_image(matris: list) -> Image.Image:
             v = 255 if matris[y][x] else 0
             pikseller[x, y] = (v, v, v)
     return yeni
+
 def erozyon(resim: Image.Image) -> Image.Image:
     matris = get_binary(ikili_donusum(resim.copy()))
     h, w = len(matris), len(matris[0])

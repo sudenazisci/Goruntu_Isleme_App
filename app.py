@@ -1,13 +1,10 @@
-# app.py (Show-Off Sürüm + Tema + Animasyon + Esnek Döndürme + Kırpma dahil)
 import streamlit as st
 from PIL import Image
-from utils import gri_donusum, ikili_donusum, dondur_degistir, kirp,zoom,histogram_germe,rgb_to_hsv,cift_esikleme, kenar_bulma,gurultu_ekle_sap, mean_filtre, median_filtre,erozyon,acma,genisleme,kapama,motion_blur,resim_carpma,resim_cikarma,kontrast_azalt
+from utils import gri_donusum, ikili_donusum, dondur_degistir, kirp,zoom,histogram_esitleme,rgb_to_hsv,cift_esikleme, kenar_bulma,gurultu_ekle_sap, mean_filtre, median_filtre,erozyon,acma,genisleme,kapama,motion_blur,resim_carpma,resim_cikarma,kontrast_azalt
 import base64
 import io
 import time
-
 st.set_page_config(page_title=" Görüntü İşleme Paneli", layout="wide", page_icon="✨")
-# Yalnızca ilk açılışta karşılama baloncukları gösterilsin
 if "ilk_karsilama" not in st.session_state:
     st.session_state.ilk_karsilama = True
 st.markdown("""
@@ -18,17 +15,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.markdown("""
 <style>
-/* --- Deploy ve Menü Butonlarını Kaldır --- */
 header [data-testid="stToolbar"] {
     visibility: hidden;
 }
-
-/* Sol üst menü ≡ (hamburger) tuşunu gizle */
 button[title="Main menu"] {
     visibility: hidden;
 }
-
-/* --- Sağ Sidebar Göster/Gizle Ok Tuşunu Stilize Et --- */
 section[data-testid="stSidebar"] ~ div button[title="Hide sidebar"] svg {
     stroke: #ffffff !important;
     fill: #0d47a1 !important;
@@ -103,10 +95,9 @@ st.markdown("""
             border-radius: 0 0 10px 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
-            /* Görsel Yükle ve İşlem Seç kutularını lacivert yap */
-section[data-testid="stSidebar"] .stFileUploader, 
-section[data-testid="stSidebar"] .stSelectbox {
-    background-color: #0d1b2a !important; /* Lacivert */
+    section[data-testid="stSidebar"] .stFileUploader, 
+    section[data-testid="stSidebar"] .stSelectbox {
+    background-color: #0d1b2a !important; 
     border-radius: 10px !important;
     padding: 10px !important;
     color: #ffffff !important;
@@ -217,21 +208,17 @@ section[data-testid="stSidebar"] label {
             border: 1px solid #81d4fa !important;
             padding: 5px 10px !important;
         }   
-           /* Sidebar'daki dosya yükleme ve işlem seçimi kutuları */
-section[data-testid="stSidebar"] > div:first-child {
-    background: linear-gradient(145deg, #0d47a1, #1565c0);  /* koyu mavi degrade */
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        section[data-testid="stSidebar"] > div:first-child {
+         background: linear-gradient(145deg, #0d47a1, #1565c0);  /* koyu mavi degrade */
+          padding: 25px;
+          border-radius: 15px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
-
-/* Sidebar yazı renkleri ve font */
 section[data-testid="stSidebar"] label {
     color: #ffffff !important;
     font-weight: bold;
     font-size: 1rem;
 }
-
 section[data-testid="stSidebar"] .stSelectbox,
 section[data-testid="stSidebar"] .stFileUploader,
 section[data-testid="stSidebar"] .stSlider {
@@ -241,7 +228,6 @@ section[data-testid="stSidebar"] .stSlider {
     border: 1px solid #90caf9 !important;
     padding: 10px;
 }
-
 section[data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
@@ -254,7 +240,7 @@ h1 {
     font-weight: bold;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
 }
-            .stImage img {
+   .stImage img {
     transition: transform 0.3s ease-in-out;
 }
 .stImage img:hover {
@@ -262,13 +248,8 @@ h1 {
             
 </style>
 """, unsafe_allow_html=True)
-
-
-# Kenar panel (ayarlar)
 with st.sidebar:
     st.markdown("### 👋 Hoş Geldin!")
-
-    # İsim kutusu özel tasarım
     st.markdown("""
     <style>
     input {
@@ -286,46 +267,45 @@ with st.sidebar:
         "Gri Dönüşüm",      "Binary Dönüşüm", "Görüntü Döndürme","Görüntü Kırpma",      "Yakınlaştır/Uzaklaştır",      "Histogram Germe",      "Renk Uzayı Dönüşümü",  "Çift Eşikleme", "Kenar Bulma", "Gürültü Ekle (Salt & Pepper)","Gürültü Temizle (Mean Filtre)","Gürültü Temizle (Median Filtre)","Morfolojik İşlem: Erozyon","Morfolojik İşlem: Genişleme","Morfolojik İşlem: Açma","Morfolojik İşlem: Kapama","Hareket Filtresi (Motion Blur)","Resim Çıkarma","Resim Çarpma","Kontrast Azaltma",
   ])
     basla = st.button("✨ İşlemi Başlat", use_container_width=True)
-# Sadece ilk açılışta karşılama mesajı ve baloncuk göster
 if isim and st.session_state.ilk_karsilama:
     st.toast(f"🎉 Hoş geldin {isim}! Görsel işlemeye hazırsın.")
     st.balloons()
     st.success(f"💡 Hoş geldin {isim}! Şimdi görsel yükleyip işlemeye başlayabilirsin.")
-    st.session_state.ilk_karsilama = False  # Artık gösterme
+    st.session_state.ilk_karsilama = False 
 elif not isim:
     st.warning("👈 Lütfen sol panelden adınızı giriniz!") 
     esik = derece = x1 = y1 = x2 = y2 = oran = blur_boyut = alt_esik = ust_esik = None
 
 if islem == "Binary Dönüşüm":
-    st.markdown('<div class="sidebar-label">🎚️ Eşik Değeri</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Eşik Değeri</div>', unsafe_allow_html=True)
     esik = st.slider("", 0, 255, 128)
 
 elif islem == "Görüntü Döndürme":
-    st.markdown('<div class="sidebar-label">🔄 Döndürme Açısı</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Döndürme Açısı</div>', unsafe_allow_html=True)
     derece = st.selectbox("", [90, 180, 270])
 
 elif islem == "Görüntü Kırpma":
-    st.markdown('<div class="sidebar-label">📐 Kırpma Koordinatları</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Kırpma Koordinatları</div>', unsafe_allow_html=True)
     x1 = st.number_input("Başlangıç X", min_value=0, step=1, value=0)
     y1 = st.number_input("Başlangıç Y", min_value=0, step=1, value=0)
     x2 = st.number_input("Bitiş X", min_value=1, step=1, value=100)
     y2 = st.number_input("Bitiş Y", min_value=1, step=1, value=100)
 
 elif islem == "Yakınlaştır/Uzaklaştır":
-    st.markdown('<div class="sidebar-label">🔍 Yakınlaştırma Oranı</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Yakınlaştırma Oranı</div>', unsafe_allow_html=True)
     oran = st.slider("", 0.1, 3.0, 1.0, 0.1)
 
 elif islem == "Çift Eşikleme":
-    st.markdown('<div class="sidebar-label">🧭 Eşik Aralığı</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label">Eşik Aralığı</div>', unsafe_allow_html=True)
     alt_esik = st.slider("Alt Eşik", 0, 255, 85)
     ust_esik = st.slider("Üst Eşik", 0, 255, 170)
 
 elif islem == "Gürültü Ekle (Salt & Pepper)":
-    st.markdown('<div class="sidebar-label">🧂 Gürültü Oranı</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label">Gürültü Oranı</div>', unsafe_allow_html=True)
     oran = st.slider("", 0.0, 0.1, 0.02, 0.01)
 
 elif islem == "Hareket Filtresi (Motion Blur)":
-    st.markdown('<div class="sidebar-label">🎞️ Filtre Boyutu</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Filtre Boyutu</div>', unsafe_allow_html=True)
     blur_boyut = st.slider("", 3, 15, 9, 2)
 
 elif islem in ["Resim Çıkarma", "Resim Çarpma"]:
@@ -333,9 +313,8 @@ elif islem in ["Resim Çıkarma", "Resim Çarpma"]:
     ikinci_dosya = st.file_uploader("📂", type=["jpg", "jpeg", "png"], key="ikinci")
 
 elif islem == "Kontrast Azaltma":
-    st.markdown('<div class="sidebar-label">🌓 Kontrast Oranı</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-label"> Kontrast Oranı</div>', unsafe_allow_html=True)
     oran = st.slider("", 0.0, 1.0, 0.5, 0.05) 
-
 if dosya:
     st.markdown("""
         <style>
@@ -373,9 +352,7 @@ if dosya:
 
     resim = Image.open(dosya).convert("RGB")
     st.markdown("### 📷 Yüklenen Görsel ve Sonuç")
-
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown('<div class="image-card">', unsafe_allow_html=True)
         st.image(resim, caption="🎯 Orijinal Görsel", use_container_width=True)
@@ -425,7 +402,7 @@ if dosya:
                 resim2 = Image.open(ikinci_dosya).convert("RGB").resize(resim.size)
                 sonuc = resim_carpma(resim.copy(), resim2)
             elif islem == "Histogram Germe":
-                sonuc = histogram_germe(resim.copy())
+                sonuc = histogram_esitleme(resim.copy())
             else:
                 st.warning("İşlem için gerekli ayarları yapmalısınız.")
                 sonuc = None
