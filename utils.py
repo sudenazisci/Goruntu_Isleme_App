@@ -207,20 +207,23 @@ def gurultu_ekle_sap(resim: Image.Image, oran: float) -> Image.Image:
 
 def mean_filtre(resim: Image.Image) -> Image.Image:
     genislik, yukseklik = resim.size
-    gri = gri_donusum(resim.copy())
-    orijinal = gri.load()
-
+    orijinal = resim.load()
     yeni = Image.new("RGB", (genislik, yukseklik))
     yeni_pikseller = yeni.load()
 
     for x in range(1, genislik - 1):
         for y in range(1, yukseklik - 1):
-            toplam = 0
+            toplam_r = toplam_g = toplam_b = 0
             for i in range(-1, 2):
                 for j in range(-1, 2):
-                    toplam += orijinal[x + i, y + j][0]
-            ort = toplam // 9
-            yeni_pikseller[x, y] = (ort, ort, ort)
+                    r, g, b = orijinal[x + i, y + j]
+                    toplam_r += r
+                    toplam_g += g
+                    toplam_b += b
+            ort_r = toplam_r // 9
+            ort_g = toplam_g // 9
+            ort_b = toplam_b // 9
+            yeni_pikseller[x, y] = (ort_r, ort_g, ort_b)
 
     return yeni
 def median_filtre(resim: Image.Image) -> Image.Image:

@@ -407,27 +407,32 @@ if dosya:
                 st.warning("İşlem için gerekli ayarları yapmalısınız.")
                 sonuc = None
         end = time.time()
-        if 'sonuc' in locals() and sonuc:
-            with col2:
-                st.markdown('<div class="image-card">', unsafe_allow_html=True)
-                st.image(sonuc, caption="✨ İşlenmiş Görsel", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown(f"""
-<div class="process-box" style="color: #0d1b2a;">
-    <h4>✅ İşlem başarıyla tamamlandı!</h4>
-    <p>🕒 Süre: <b>{end - start:.2f} saniye</b></p>
-    <p>📐 Görüntü Boyutu: <b>{resim.size[0]}x{resim.size[1]}</b></p>
-    <p>⚙️ Uygulanan İşlem: <b>{islem}</b></p>
-</div>
-""", unsafe_allow_html=True)
-            buf = io.BytesIO()
-            sonuc.save(buf, format="PNG")
-            byte_im = buf.getvalue()
-            b64 = base64.b64encode(byte_im).decode()
-            st.markdown(f"""
-                <div style="text-align: center; margin-top: 1rem;">
-                    <a href="data:file/png;base64,{b64}" download="islenmis_gorsel.png" class="download-btn">
-                        💾 Görseli İndir
-                    </a>
-                </div>
-            """, unsafe_allow_html=True)
+if 'sonuc' in locals() and sonuc:
+    with col2:
+        st.markdown('<div class="image-card">', unsafe_allow_html=True)
+        if islem == "Yakınlaştır/Uzaklaştır":
+            st.image(sonuc, caption="✨ İşlenmiş Görsel", width=sonuc.width)
+        else:
+            st.image(sonuc, caption="✨ İşlenmiş Görsel", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="process-box" style="color: #0d1b2a;">
+        <h4>✅ İşlem başarıyla tamamlandı!</h4>
+        <p>🕒 Süre: <b>{end - start:.2f} saniye</b></p>
+        <p>📐 Görüntü Boyutu: <b>{resim.size[0]}x{resim.size[1]}</b></p>
+        <p>⚙️ Uygulanan İşlem: <b>{islem}</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    buf = io.BytesIO()
+    sonuc.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    b64 = base64.b64encode(byte_im).decode()
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="data:file/png;base64,{b64}" download="islenmis_gorsel.png" class="download-btn">
+                💾 Görseli İndir
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
